@@ -8,6 +8,7 @@
     <title>DAYTONE — keep the feeling</title>
     <meta name="description" content="A small moment, held in a song. Your personal music-driven visual diary." />
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./atmosphere.css" />
     <script type="module" src="./app.js"></script>
   </head>
   <body>
@@ -56,6 +57,10 @@
               </label>
             </div>
             <p id="archive-message" class="archive-message" role="status" aria-live="polite"></p>
+            <div class="demo-controls">
+              <button id="load-demo-days" type="button" class="secondary-action">Explore 3 demo days</button>
+              <span class="field-hint">Fictional stories, original illustrations and synthesized music. Your own days stay untouched.</span>
+            </div>
             <div class="archive-rule"><span></span></div>
             <div id="archive-content" class="archive-content" aria-live="polite" aria-busy="true">
               <div class="archive-loading" aria-label="Loading memories">
@@ -103,10 +108,10 @@
                 <label class="field-label" for="memory-title">Give this day a name <span class="optional-note">optional</span></label>
                 <input id="memory-title" name="title" class="title-input" type="text" maxlength="90" placeholder="The long way home" autocomplete="off" />
                 <label class="field-label story-label" for="memory-text">The story</label>
-                <textarea id="memory-text" name="memory" maxlength="280" placeholder="The late train, the open window, the light turning gold…" required></textarea>
+                <textarea id="memory-text" name="memory" maxlength="10000" placeholder="The late train, the open window, the light turning gold…" required></textarea>
                 <div class="field-foot">
                   <span class="field-hint">A few honest words are enough.</span>
-                  <span id="character-count" class="character-count">0 / 280</span>
+                  <span id="character-count" class="character-count">0 / 10000</span>
                 </div>
                 <div class="story-meta">
                   <div class="field-group">
@@ -146,7 +151,7 @@
                   <span class="dropzone-mark" aria-hidden="true"><span></span><span></span></span>
                   <strong>Drop photographs here</strong>
                   <span>or choose from your device</span>
-                  <span class="dropzone-format">JPG, PNG, HEIC · choose more than one</span>
+                  <span class="dropzone-format">JPG, PNG, WebP · choose more than one</span>
                   <span class="dropzone-browse">Browse photographs</span>
                 </label>
                 <div class="photo-grid-heading">
@@ -174,7 +179,7 @@
                   <button class="source-option" type="button" data-mode="youtube" aria-pressed="false">A YouTube link</button>
                 </div>
                 <div id="local-panel" class="source-panel" data-panel="local">
-                  <p class="source-description">An MP3 or WAV from your library. It never leaves this browser.</p>
+                  <p class="source-description">Use your own or licensed MP3/WAV. It stays in this browser; use a YouTube link for songs you do not have permission to copy.</p>
                   <label class="file-picker" for="audio-file">
                     <span class="file-picker-icon" aria-hidden="true">+</span>
                     <span class="file-picker-copy"><strong id="file-name">Choose an audio file</strong><small>MP3 or WAV · stored on this device</small></span>
@@ -207,7 +212,9 @@
                   <p id="excerpt-help" class="field-hint">Set a starting point for the part you want to keep.</p>
                 </div>
                 </div>
-                <p id="form-message" class="form-message" role="status" aria-live="polite"></p>
+                <label class="field-label" for="music-description">How does the song feel? <span class="optional-note">optional</span></label>
+                <textarea id="music-description" class="music-description" maxlength="500" placeholder="Slow ambient, fast electronic… / Тихая мелодия, энергичный рок…"></textarea>
+                <p class="field-hint">This description influences movement. Local audio events are analysed too; YouTube audio is not downloaded.</p>
                 <div class="panel-actions final-actions">
                   <button id="soundtrack-back" class="secondary-action" type="button"><span aria-hidden="true">←</span> Back to frames</button>
                   <button id="cancel-create" class="quiet-action" type="button">Leave without saving</button>
@@ -216,6 +223,7 @@
                 <p class="privacy-note">Your diary lives in this browser, not on a server.</p>
               </div>
             </section>
+            <p id="form-message" class="form-message" role="status" aria-live="polite"></p>
           </form>
         </section>
       </main>
@@ -246,6 +254,15 @@
           <h2 id="presentation-title"></h2>
           <time id="presentation-date"></time>
           <p id="presentation-story" class="presentation-story"></p>
+          <details class="atmosphere-explanation">
+            <summary>Why this day looks this way</summary>
+            <p id="presentation-explanation"></p>
+            <p>An artistic interpretation, not a psychological assessment.</p>
+          </details>
+          <div class="day-actions">
+            <button id="export-day" type="button">Download day folder</button>
+            <button id="narrate-day" type="button" aria-pressed="false">Read story aloud</button>
+          </div>
           <div class="presentation-music">
             <span class="music-mark" aria-hidden="true"><span></span><span></span><span></span></span>
             <div class="presentation-track-copy">

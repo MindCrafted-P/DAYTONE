@@ -1,0 +1,317 @@
+/* DAYTONE — light held on paper.
+   Load after styles.css. Atmosphere is opt-in on each card and dialog.
+   Existing typography, image composition and page geometry remain intact. */
+
+:is(.memory-card, .memory-dialog)[data-atmosphere] {
+  --at-hue: var(--day-hue, 88);
+  --at-light: clamp(91%, calc(90% + var(--day-light, 56) * .07%), 97%);
+  --at-accent: hsl(var(--at-hue) 24% 29%);
+  --at-wash: hsl(var(--at-hue) 32% var(--at-light));
+  --at-soft: hsl(var(--at-hue) 28% 86%);
+  --at-line: hsl(var(--at-hue) 17% 73%);
+  --at-decoration: hsl(var(--at-hue) 36% 71% / .27);
+  --at-duration: var(--day-motion, 8s);
+  --at-surface: linear-gradient(145deg, var(--at-wash), #f5eee1);
+  --plum: var(--at-accent);
+  --plum-dark: var(--at-accent);
+  --plum-pale: var(--at-soft);
+  --line: var(--at-line);
+  /* Keep text dark and paper light regardless of source-photo luminance. */
+  --ink: #2c3029;
+  --muted: #626357;
+  color: var(--ink);
+}
+
+/* Diffuse, overlapping pools of light; never a treatment on the photograph. */
+:is(.memory-card, .memory-dialog)[data-atmosphere="calm"] {
+  --at-accent: hsl(var(--at-hue) 21% 29%);
+  --at-surface:
+    radial-gradient(ellipse at 8% 15%, hsl(var(--at-hue) 36% 80% / .56), transparent 66%),
+    radial-gradient(ellipse at 95% 90%, #e9dfbc80, transparent 62%),
+    linear-gradient(150deg, var(--at-wash), #f2eddf);
+}
+
+:is(.memory-card, .memory-dialog)[data-atmosphere="joyful"] {
+  --at-accent: hsl(var(--at-hue) 38% 28%);
+  --at-soft: hsl(var(--at-hue) 45% 84%);
+  --at-surface:
+    radial-gradient(circle at 94% 6%, #f1ce7c66 0 14%, transparent 14.5%),
+    radial-gradient(circle at 0 100%, hsl(var(--at-hue) 49% 77% / .4) 0 23%, transparent 23.5%),
+    linear-gradient(120deg, #fbf0d8, var(--at-wash));
+}
+
+:is(.memory-card, .memory-dialog)[data-atmosphere="nostalgic"] {
+  --at-accent: hsl(calc(var(--at-hue) + 12) 19% 29%);
+  --at-soft: #e6d8bf;
+  --at-line: #c5b394;
+  --at-surface:
+    linear-gradient(90deg, #ab855612, transparent 11% 89%, #ab855612),
+    linear-gradient(145deg, #f0e5ce, var(--at-wash));
+}
+
+:is(.memory-card, .memory-dialog)[data-atmosphere="intense"] {
+  --at-accent: hsl(var(--at-hue) 34% 25%);
+  --at-soft: hsl(var(--at-hue) 30% 82%);
+  --at-line: hsl(var(--at-hue) 24% 64%);
+  --at-surface:
+    repeating-linear-gradient(125deg, transparent 0 34px, hsl(var(--at-hue) 28% 43% / .055) 34px 35px, transparent 35px 68px),
+    linear-gradient(125deg, var(--at-wash), #eee5d6);
+}
+
+:is(.memory-card, .memory-dialog)[data-atmosphere="tender"] {
+  --at-accent: hsl(calc(var(--at-hue) + 18) 24% 30%);
+  --at-soft: #ead7cc;
+  --at-surface:
+    radial-gradient(ellipse at 15% 28%, #e7bdae55, transparent 68%),
+    radial-gradient(ellipse at 94% 80%, hsl(var(--at-hue) 32% 80% / .48), transparent 65%),
+    linear-gradient(150deg, #f8eee5, var(--at-wash));
+}
+
+.memory-card[data-atmosphere] {
+  border-bottom-color: var(--at-line);
+}
+
+.memory-card[data-atmosphere] .memory-card-body,
+.memory-dialog[data-atmosphere] .presentation-copy {
+  position: relative;
+  isolation: isolate;
+  background: var(--at-surface);
+}
+
+.memory-card[data-atmosphere] .memory-card-body {
+  /* No added padding or changed column geometry. */
+  box-shadow: 0 11px 0 var(--at-wash);
+}
+
+.memory-card[data-atmosphere] .memory-card-top,
+.memory-card[data-atmosphere] .track-byline,
+.memory-card[data-atmosphere] :is(.edit-button, .delete-button),
+.memory-card[data-atmosphere] .memory-text,
+.memory-dialog[data-atmosphere] :is(.presentation-story, .presentation-status, .presentation-time, .track-kicker) {
+  color: #595b50;
+}
+
+.memory-card[data-atmosphere] .memory-mood {
+  color: var(--at-accent);
+}
+
+.memory-dialog[data-atmosphere] {
+  border-color: var(--at-line);
+  background: var(--at-wash);
+}
+
+.memory-dialog[data-atmosphere] .presentation-photo-wrap {
+  background: hsl(var(--at-hue) 17% 82%);
+}
+
+/* Personal photographs retain their original colors, including on hover. */
+.memory-card[data-atmosphere] .memory-cover,
+.memory-card[data-atmosphere] .memory-cover-button:hover .memory-cover,
+.memory-dialog[data-atmosphere] .presentation-image {
+  filter: none;
+}
+
+.memory-dialog[data-atmosphere] .presentation-image {
+  transition: opacity .36s ease, transform var(--at-duration) ease;
+}
+
+.memory-card[data-atmosphere] .memory-cover-empty {
+  background: var(--at-surface);
+}
+
+.memory-dialog[data-atmosphere] .presentation-empty {
+  color: #faf3e5;
+  background:
+    radial-gradient(ellipse at 75% 20%, hsl(var(--at-hue) 35% 68% / .28), transparent 58%),
+    linear-gradient(145deg, var(--at-accent), #343a30);
+}
+
+/* Ambient light lives behind the words, not across faces or controls.
+   These are opacity/transform-only animations, with long, low-energy cycles. */
+.memory-dialog[data-atmosphere="calm"] .presentation-copy::before,
+.memory-dialog[data-atmosphere="tender"] .presentation-copy::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  background: radial-gradient(ellipse at 25% 30%, var(--at-decoration), transparent 70%);
+  opacity: .5;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .memory-dialog[open][data-atmosphere="calm"] .presentation-copy::before,
+  .memory-dialog[open][data-atmosphere="tender"] .presentation-copy::before {
+    animation: daytone-light var(--at-duration) ease-in-out infinite alternate;
+  }
+}
+
+@keyframes daytone-light {
+  from { opacity: .25; transform: translateY(-3px); }
+  to { opacity: .8; transform: translateY(3px); }
+}
+
+/* A quiet, static film texture on the paper only.
+   The transformed paper establishes the containing block for fixed grain;
+   clipping prevents it from reaching photos, the backdrop or adjacent cards. */
+:is(.memory-card, .memory-dialog)[data-atmosphere="nostalgic"] :is(.memory-card-body, .presentation-copy) {
+  transform: translateZ(0);
+  clip-path: inset(0);
+}
+
+:is(.memory-card, .memory-dialog)[data-atmosphere="nostalgic"] :is(.memory-card-body, .presentation-copy)::before {
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  opacity: .075;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Cpath fill='%2375654d' filter='url(%23g)' d='M0 0h160v160H0z'/%3E%3C/svg%3E");
+}
+
+/* Rhythm is structural and still. Playback alone moves the tiny music bars. */
+.memory-dialog[data-atmosphere="intense"] .presentation-music {
+  border-top: 2px solid var(--at-accent);
+}
+
+.memory-dialog[data-atmosphere="intense"] .music-mark {
+  gap: 4px;
+  border-radius: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .memory-dialog[open][data-atmosphere="intense"] .presentation-music:has(.play-control[aria-pressed="true"]) .music-mark span {
+    transform-origin: center bottom;
+    animation: daytone-rhythm var(--at-duration) ease-in-out infinite;
+  }
+  .memory-dialog[data-atmosphere="intense"] .music-mark span:nth-child(2) { animation-delay: -.7s; }
+  .memory-dialog[data-atmosphere="intense"] .music-mark span:nth-child(3) { animation-delay: -1.4s; }
+}
+
+@keyframes daytone-rhythm {
+  0%, 100% { transform: scaleY(.65); }
+  35% { transform: scaleY(1.15); }
+  70% { transform: scaleY(.85); }
+}
+
+/* Optional companion UI. These selectors do not require new wrappers. */
+.atmosphere-explanation {
+  margin: 19px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: #55594d;
+  font-size: 11px;
+  line-height: 1.7;
+}
+.atmosphere-explanation summary {
+  width: fit-content;
+  min-height: 32px;
+  padding: 5px 0;
+  color: var(--plum);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: .035em;
+}
+.atmosphere-explanation summary::marker { color: var(--coral); }
+.atmosphere-explanation p { max-width: 48ch; margin: 7px 0 0; }
+
+.day-actions, .demo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px 14px;
+}
+.day-actions { margin-top: 18px; }
+.demo-controls {
+  margin: 18px 0;
+  padding: 13px 0;
+  border-block: 1px solid var(--line);
+  color: #55594d;
+  font-size: 11px;
+}
+.day-actions button, .demo-controls button {
+  min-height: 40px;
+  padding: 9px 13px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  color: var(--plum-dark);
+  background: var(--paper-card);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 9px;
+}
+.day-actions button:hover:not(:disabled),
+.demo-controls button:hover:not(:disabled),
+.demo-controls button[aria-pressed="true"] {
+  border-color: var(--plum);
+  background: var(--plum-pale);
+}
+.day-actions button:disabled, .demo-controls button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+.demo-controls label { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.demo-controls select {
+  max-width: 100%;
+  min-height: 40px;
+  padding: 7px 25px 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  color: var(--ink);
+  background: var(--paper-card);
+  font-size: 11px;
+}
+.music-description {
+  width: 100%;
+  margin-top: 10px;
+  color: #55594d;
+  font-size: 11px;
+  line-height: 1.7;
+}
+textarea.music-description { min-height: 82px; padding: 10px 2px; font-family: var(--body); }
+.demo-badge {
+  display: inline-block;
+  width: fit-content;
+  padding: 5px 7px;
+  border: 1px solid #b7b99c;
+  color: #465138;
+  background: #e8eadb;
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: .07em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.atmosphere-explanation summary:focus-visible,
+.day-actions button:focus-visible,
+.demo-controls :is(button, select):focus-visible,
+.music-description:focus-visible,
+:is(.memory-card, .memory-dialog)[data-atmosphere] :focus-visible {
+  outline: 2px solid #765131;
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.memory-card, .memory-dialog)[data-atmosphere],
+  :is(.memory-card, .memory-dialog)[data-atmosphere] *,
+  :is(.memory-card, .memory-dialog)[data-atmosphere] *::before,
+  :is(.memory-card, .memory-dialog)[data-atmosphere] *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .memory-card[data-atmosphere] .memory-cover-button:hover .memory-cover,
+  .memory-dialog[data-atmosphere] .presentation-image.is-changing {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  :is(.memory-card, .memory-dialog)[data-atmosphere] :is(.memory-card-body, .presentation-copy)::before {
+    display: none;
+  }
+  .demo-badge, .day-actions button, .demo-controls button {
+    border: 1px solid ButtonText;
+  }
+}

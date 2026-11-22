@@ -1,9 +1,12 @@
 import { deleteMemory, getMemories, putMemory } from "./src/memory-store.js";
 import { findBestAudioMoment, frameSchedule, readId3 } from "./src/audio-moment.js";
+import { suggestDayTitle, composeAtmosphere, samplePhotos, applyAtmosphere } from "./src/atmosphere.js";
+import { makeDemoDays } from "./src/demo-days.js";
+import { exportDay } from "./src/day-export.js";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
-const MAX_STORY_LENGTH = 280;
+const MAX_STORY_LENGTH = 10000;
 const DB_IMAGE_FIELDS = ["id", "name", "type", "blob"];
 
 const dom = {
@@ -128,6 +131,7 @@ const state = {
   youtubeApiPromise: null,
   presentationTimer: 0,
   saveInProgress: false,
+  demoInProgress: false,
 };
 
 $("#footer-year").textContent = String(new Date().getFullYear());
@@ -182,6 +186,22 @@ dom.stageTabs.forEach((button) => button.addEventListener("click", () => {
 }));
 dom.cancelCreate.addEventListener("click", cancelEditing);
 dom.form.addEventListener("submit", saveMemory);
+$("#load-demo-days").addEventListener("click", loadDemoDays);
+$("#export-day").addEventListener("click", async () => {
+  const record = state.presentationRecord;
+  if (!record) return;
+  const button = $("#export-day");
+  button.disabled = true;
+  setPresentationStatus("Preparing a portable day folder…");
+  try {
+    await exportDay(record);
+    setPresentationStatus("Folder downloaded. Unzip it and open memory.html to revisit this day.");
+  } catch (error) {
+    setPresentationStatus(error.message || "Could not export this day. Your saved memory is unchanged.");
+  } finally { button.disabled = false; }
+});
+$("#narrate-day").addEventListener("click", narrateDay);
+$("#narrate-day").hidden = !("speechSynthesis" in window);
 
 $$(".source-option").forEach((button) => {
   button.addEventListener("click", () => setMode(button.dataset.mode));
@@ -472,12 +492,7 @@ function updateCharacterCount() {
 }
 
 function suggestTitle(text) {
-  const cleaned = text.trim().replace(/\s+/g, " ");
-  if (!cleaned) return "";
-  const firstSentence = cleaned.split(/(?<=[.!?])\s+/)[0] || cleaned;
-  const words = firstSentence.split(" ");
-  const title = words.slice(0, 9).join(" ");
-  return title.length > 68 ? `${title.slice(0, 65).trimEnd()}…` : title;
+  return suggestDayTitle(text);
 }
 
 function setFormMessage(message, isError = false) {
@@ -1054,6 +1069,7 @@ async function editMemory(record) {
   state.titleWasEdited = Boolean(record.title);
   dom.title.value = record.title || suggestTitle(record.memory);
   dom.story.value = record.memory || "";
+  $("#music-description").value = record.musicDescription || "";
   dom.date.value = record.date || localDateString(new Date());
   setMood(record.mood || "");
   dom.excerptStart.value = formatTime(record.startTime ?? record.excerptStart ?? 0);
@@ -1204,6 +1220,7 @@ function createMemoryCard(record, index) {
   const card = document.createElement("article");
   card.className = "memory-card";
   card.dataset.mood = moodClass(record.mood);
+  applyAtmosphere(card, record.atmosphere);
   card.style.animationDelay = `${Math.min(index, 8) * 40}ms`;
   card.dataset.memoryId = record.id;
 
@@ -1243,7 +1260,7 @@ function createMemoryCard(record, index) {
   date.textContent = formatDate(record.date);
   const mood = document.createElement("span");
   mood.className = "memory-mood";
-  mood.textContent = record.mood || "A day, kept";
+  mood.textContent = `${record.demo ? "DEMO · " : ""}${record.atmosphere?.label || record.mood || "A day, kept"}`;
   header.append(date, mood);
 
   const title = document.createElement("h3");
@@ -1433,6 +1450,8 @@ async function saveMemory(event) {
     memory: dom.story.value.trim(),
     date: dom.date.value,
     mood: dom.mood.value || "",
+    musicDescription: $("#music-description").value.trim(),
+    demo: existing?.demo || false,
     photos: state.photos.map((photo) => Object.fromEntries(
       DB_IMAGE_FIELDS.map((field) => [field, field === "blob" ? photo.blob : photo[field]]),
     )),
@@ -1446,6 +1465,7 @@ async function saveMemory(event) {
   dom.saveButton.disabled = true;
   dom.saveButton.querySelector("span").textContent = state.editId ? "Saving changes…" : "Keeping this memory…";
   try {
+    memory.atmosphere = composeAtmosphere(memory, await samplePhotos(memory.photos));
     await putMemory(memory);
     const successMessage = state.editId ? "Changes saved." : "Memory saved to your archive.";
     resetDraft();
@@ -1510,6 +1530,9 @@ function openPresentation(record) {
   dom.presentationStory.textContent = record.memory || "";
   dom.presentationDate.textContent = `${formatDate(record.date)}${record.mood ? ` · ${record.mood}` : ""}`;
   dom.memoryDialog.dataset.mood = moodClass(record.mood);
+  applyAtmosphere(dom.memoryDialog, record.atmosphere);
+  $("#presentation-explanation").textContent = record.atmosphere?.explanation
+    || "This is an older saved day. Edit and save it to analyse its photos, story and soundtrack.";
   dom.presentationTrack.textContent = `${record.trackTitle || "YouTube video"}${record.channel ? ` · ${record.channel}` : ""}`;
   if (dom.presentationOpenYoutube) {
     const isYoutube = state.presentationKind === "youtube" && Boolean(record.sourceUrl);
@@ -1593,6 +1616,7 @@ function stepPresentationFrame(amount) {
 
 function togglePresentationPlayback() {
   if (!state.presentationRecord) return;
+  stopNarration();
   if (state.presentationKind === "local") {
     if (dom.presentationAudio.paused) playLocalPresentation();
     else dom.presentationAudio.pause();
@@ -1872,6 +1896,7 @@ function closePresentation() {
 }
 
 function stopPresentationPlayback() {
+  stopNarration();
   state.presentationSession += 1;
   clearPresentationTimer();
   dom.presentationAudio.pause();
@@ -1956,4 +1981,55 @@ function stopAudioVisualization() {
     state.visualizerFrame = null;
   }
   if (dom.audioVisualizer) dom.audioVisualizer.hidden = true;
+}
+
+function stopNarration() {
+  if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+  const button = $("#narrate-day");
+  button.setAttribute("aria-pressed", "false");
+  button.textContent = "Read story aloud";
+}
+
+function narrateDay() {
+  const record = state.presentationRecord;
+  if (!record || !("speechSynthesis" in window)) return;
+  const button = $("#narrate-day");
+  if (button.getAttribute("aria-pressed") === "true") { stopNarration(); return; }
+  dom.presentationAudio.pause();
+  if (state.youtubePlayerReady) state.youtubePlayer?.pauseVideo();
+  stopNarration();
+  const utterance = new SpeechSynthesisUtterance(record.memory);
+  utterance.lang = /[а-яё]/i.test(record.memory) ? "ru-RU" : "en-US";
+  const voices = window.speechSynthesis.getVoices().filter((voice) => voice.lang.startsWith(utterance.lang.slice(0, 2)));
+  // Prefer on-device synthesis. Browser/OS determines which voices exist.
+  utterance.voice = voices.find((voice) => voice.localService) || voices[0] || null;
+  utterance.rate = record.atmosphere?.energy === "high" ? 1.08 : 0.88;
+  utterance.pitch = record.atmosphere?.key === "tender" ? 1.05 : 1;
+  utterance.onend = () => { button.setAttribute("aria-pressed", "false"); button.textContent = "Read story aloud"; };
+  utterance.onerror = (event) => {
+    utterance.onend();
+    if (event.error !== "canceled" && event.error !== "interrupted") setPresentationStatus("Speech is unavailable in this browser. The written story is still available.");
+  };
+  button.setAttribute("aria-pressed", "true");
+  button.textContent = "Stop narration";
+  window.speechSynthesis.speak(utterance);
+}
+
+async function loadDemoDays() {
+  if (state.demoInProgress) return;
+  state.demoInProgress = true;
+  const button = $("#load-demo-days");
+  button.disabled = true;
+  setArchiveMessage("Preparing original demo illustrations and music…");
+  try {
+    const existing = new Set((await getMemories()).map((record) => record.id));
+    for (const record of await makeDemoDays()) if (!existing.has(record.id)) await putMemory(record);
+    dom.archiveSearch.value = "";
+    dom.archiveDateFilter.value = "";
+    await loadArchive();
+    setArchiveMessage("Three fictional demo days are available. Their artwork and music were created for DAYTONE; they are not personal photographs.");
+  } catch (error) {
+    setArchiveMessage(error.message || "Could not save demo days. Existing memories were not changed.", true);
+    await loadArchive();
+  } finally { button.disabled = false; state.demoInProgress = false; }
 }
