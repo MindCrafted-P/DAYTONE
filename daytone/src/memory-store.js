@@ -68,11 +68,20 @@ export async function putMemory(memory) {
   }
   const database = await openDatabase();
   return new Promise((resolve, reject) => {
-    const transaction = database.transaction(STORE_NAME, "readwrite");
-    transaction.objectStore(STORE_NAME).put(memory);
-    transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error || new Error("Could not save this memory."));
-    transaction.onabort = () => reject(transaction.error || new Error("Saving this memory was cancelled."));
+    const rejectSave = (error) => {
+      reject(error?.name === "QuotaExceededError"
+        ? new Error("This browser is out of storage space. Free up space, then try saving again.")
+        : error || new Error("Could not save this memory."));
+    };
+    try {
+      const transaction = database.transaction(STORE_NAME, "readwrite");
+      transaction.objectStore(STORE_NAME).put(memory);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => rejectSave(transaction.error);
+      transaction.onabort = () => rejectSave(transaction.error || new Error("Saving this memory was cancelled."));
+    } catch (error) {
+      rejectSave(error);
+    }
   });
 }
 

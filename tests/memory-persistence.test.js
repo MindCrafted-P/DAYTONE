@@ -169,3 +169,86 @@ test("memories keep photos, notes, and soundtrack when created, edited, or delet
   assert.equal(await page.locator(".memory-card").count(), 0);
   assert.match(await page.locator(".empty-state h3").textContent(), /Nothing held here yet/);
 });
+
+test("a failed IndexedDB write keeps the complete draft available for retry", {
+  timeout: 90000,
+}, async () => {
+  const context = await browser.newContext();
+  await context.addInitScript(() => {
+    window.__failNextDiaryWrite = true;
+    const originalPut = IDBObjectStore.prototype.put;
+    IDBObjectStore.prototype.put = function (...args) {
+      if (window.__failNextDiaryWrite) {
+        window.__failNextDiaryWrite = false;
+        throw new DOMException("Quota exceeded", "QuotaExceededError");
+      }
+      return originalPut.apply(this, args);
+    };
+  });
+  const failurePage = await context.newPage();
+
+  try {
+    await failurePage.goto(appUrl);
+    await failurePage.waitForFunction(() => {
+      const archive = document.querySelector("#archive-content");
+      return archive?.getAttribute("aria-busy") === "false";
+    });
+    await failurePage.locator("#create-memory-button").click();
+    await failurePage.locator("#memory-title").fill("A day worth keeping");
+    await failurePage.locator("#memory-text").fill("The note stays here while storage is full.");
+    await failurePage.locator("#story-next").click();
+    await failurePage.locator("#photo-files").setInputFiles(photoPath);
+    await failurePage.waitForFunction(() => {
+      const image = document.querySelector("#photo-grid img");
+      return image?.complete && image.naturalWidth > 0;
+    });
+    await failurePage.locator("#frames-next").click();
+    await failurePage.locator("#audio-file").setInputFiles(audioPath);
+    await failurePage.waitForFunction(() => {
+      const player = document.querySelector("#local-audio-player");
+      return player && player.readyState >= HTMLMediaElement.HAVE_METADATA
+        && Number.isFinite(player.duration) && player.duration > 0;
+    });
+    await failurePage.locator("#local-track-title").fill("The song from that day");
+    await failurePage.locator("#save-button").click();
+
+    const message = failurePage.locator("#form-message");
+    await message.getByText(/out of storage space/i).waitFor();
+    assert.equal(await message.evaluate((element) => element.classList.contains("is-error")), true);
+    assert.equal(await failurePage.locator("#memory-title").inputValue(), "A day worth keeping");
+    assert.equal(await failurePage.locator("#memory-text").inputValue(), "The note stays here while storage is full.");
+    assert.equal(await failurePage.locator("#local-track-title").inputValue(), "The song from that day");
+    assert.equal(await failurePage.locator("#photo-grid img").getAttribute("alt"), "memory-photo.jpg");
+    assert.equal(await failurePage.locator("#local-audio-player").isVisible(), true);
+    assert.equal(await failurePage.locator("#save-button").isEnabled(), true);
+
+    await failurePage.evaluate(() => { window.__failNextDiaryWrite = false; });
+    await failurePage.locator("#save-button").click();
+    await failurePage.getByRole("heading", { name: "A day worth keeping" }).waitFor();
+    assert.match(await failurePage.locator(".memory-track").textContent(), /The song from that day/);
+
+    await failurePage.locator(".memory-card [data-action='edit']").click();
+    await failurePage.locator("#create-screen:not([hidden])").waitFor();
+    await failurePage.locator("#memory-title").fill("An edited day worth keeping");
+    await failurePage.locator("#memory-text").fill("The edited note must survive the failed write.");
+    await failurePage.locator("#story-next").click();
+    await failurePage.locator("#frames-next").click();
+    await failurePage.locator("#local-track-title").fill("The edited song from that day");
+    await failurePage.evaluate(() => { window.__failNextDiaryWrite = true; });
+    await failurePage.locator("#save-button").click();
+
+    await message.getByText(/out of storage space/i).waitFor();
+    assert.equal(await failurePage.locator("#memory-title").inputValue(), "An edited day worth keeping");
+    assert.equal(await failurePage.locator("#memory-text").inputValue(), "The edited note must survive the failed write.");
+    assert.equal(await failurePage.locator("#local-track-title").inputValue(), "The edited song from that day");
+    assert.equal(await failurePage.locator("#photo-grid img").getAttribute("alt"), "memory-photo.jpg");
+    assert.equal(await failurePage.locator("#local-audio-player").isVisible(), true);
+
+    await failurePage.evaluate(() => { window.__failNextDiaryWrite = false; });
+    await failurePage.locator("#save-button").click();
+    await failurePage.getByRole("heading", { name: "An edited day worth keeping" }).waitFor();
+    assert.match(await failurePage.locator(".memory-track").textContent(), /The edited song from that day/);
+  } finally {
+    await context.close();
+  }
+});
