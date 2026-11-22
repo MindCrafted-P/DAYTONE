@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f3eee2" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <title>DAYTONE — keep the feeling</title>
+    <meta name="description" content="A small moment, held in a song. Your personal music-driven visual diary." />
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="masthead">
+        <a class="wordmark" href="#archive-screen" aria-label="DAYTONE archive">DAYTONE<span class="wordmark-dot">.</span></a>
+        <p class="masthead-note">A song for the small things.</p>
+        <button id="create-memory-button" class="text-action" type="button">
+          <span class="action-plus" aria-hidden="true">+</span> Make a memory
+        </button>
+      </header>
+
+      <main>
+        <section id="archive-screen" class="screen archive-screen" aria-labelledby="page-title">
+          <div class="intro">
+            <div class="intro-copy">
+              <p class="eyebrow">A PERSONAL SOUND DIARY</p>
+              <h1 id="page-title">Keep the feeling.<br /><em>Keep the song.</em></h1>
+              <p class="intro-note">A photograph, a few words, one song. A little place to return to.</p>
+              <p id="today-date" class="intro-date"></p>
+            </div>
+            <div class="intro-stamp" aria-hidden="true">
+              <span class="stamp-orbit"></span><span class="stamp-center"></span>
+              <span class="stamp-caption">SOUND<br />& MEMORY</span>
+            </div>
+          </div>
+
+          <section class="archive-section" aria-labelledby="archive-title">
+            <div class="archive-heading">
+              <div>
+                <p class="eyebrow">THE DAYS YOU KEPT</p>
+                <h2 id="archive-title">Your archive <span id="archive-count" class="archive-count">—</span></h2>
+              </div>
+              <button class="archive-create-link" type="button" data-action="create">Add a memory <span aria-hidden="true">↗</span></button>
+            </div>
+            <div class="archive-tools">
+              <label class="search-field">
+                <span class="sr-only">Search memories</span>
+                <span class="search-symbol" aria-hidden="true"></span>
+                <input id="archive-search" type="search" placeholder="Find a feeling, a song, a place…" autocomplete="off" />
+              </label>
+              <label class="date-filter">
+                <span class="sr-only">Filter memories by date</span>
+                <span class="filter-label">A day</span>
+                <input id="archive-date-filter" type="date" />
+              </label>
+            </div>
+            <p id="archive-message" class="archive-message" role="status" aria-live="polite"></p>
+            <div class="archive-rule"><span></span></div>
+            <div id="archive-content" class="archive-content" aria-live="polite" aria-busy="true">
+              <div class="archive-loading" aria-label="Loading memories">
+                <span class="skeleton-line skeleton-short"></span>
+                <span class="skeleton-line skeleton-long"></span>
+                <span class="skeleton-line skeleton-medium"></span>
+              </div>
+            </div>
+            <button class="archive-bottom-action" type="button" data-action="create">Make room for a new memory <span aria-hidden="true">+</span></button>
+          </section>
+        </section>
+
+        <section id="create-screen" class="screen create-screen" aria-labelledby="create-title" hidden>
+          <div class="create-topline">
+            <button class="back-link" type="button" data-action="archive"><span aria-hidden="true">←</span> Back to your archive</button>
+            <p class="eyebrow">A MOMENT, KEPT IN THREE PARTS</p>
+          </div>
+          <div class="create-intro">
+            <h1 id="create-title">Make a <em>memory.</em></h1>
+            <p>Take your time. You can come back and change any detail.</p>
+          </div>
+
+          <nav class="stage-nav" aria-label="Memory creation stages">
+            <button id="stage-story" class="stage-tab is-current" type="button" data-stage="story" aria-current="step">
+              <span class="stage-number">01</span><span>Story</span>
+            </button>
+            <span class="stage-connector" aria-hidden="true"></span>
+            <button id="stage-frames" class="stage-tab" type="button" data-stage="frames">
+              <span class="stage-number">02</span><span>Frames</span>
+            </button>
+            <span class="stage-connector" aria-hidden="true"></span>
+            <button id="stage-soundtrack" class="stage-tab" type="button" data-stage="soundtrack">
+              <span class="stage-number">03</span><span>Soundtrack</span>
+            </button>
+          </nav>
+
+          <form id="memory-form" class="memory-form" novalidate>
+            <section id="stage-panel-story" class="stage-panel" data-panel="story" aria-labelledby="story-heading">
+              <div class="panel-heading">
+                <p class="eyebrow">FIRST, THE FEELING</p>
+                <h2 id="story-heading">What do you want<br />to remember?</h2>
+                <p>It can be a sentence, a fragment, or just the detail you hope stays.</p>
+              </div>
+              <div class="story-fields">
+                <label class="field-label" for="memory-title">Give this day a name <span class="optional-note">optional</span></label>
+                <input id="memory-title" name="title" class="title-input" type="text" maxlength="90" placeholder="The long way home" autocomplete="off" />
+                <label class="field-label story-label" for="memory-text">The story</label>
+                <textarea id="memory-text" name="memory" maxlength="280" placeholder="The late train, the open window, the light turning gold…" required></textarea>
+                <div class="field-foot">
+                  <span class="field-hint">A few honest words are enough.</span>
+                  <span id="character-count" class="character-count">0 / 280</span>
+                </div>
+                <div class="story-meta">
+                  <div class="field-group">
+                    <label class="field-label" for="memory-date">When was it?</label>
+                    <input id="memory-date" name="date" type="date" required />
+                  </div>
+                  <fieldset id="memory-mood-group" class="mood-fieldset">
+                     <legend class="field-label">What did it feel like? <span class="optional-note">optional</span></legend>
+                    <input id="memory-mood" name="mood" type="hidden" value="" />
+                    <div class="mood-options">
+                      <button type="button" class="mood-tag" data-mood="At ease" aria-pressed="false">At ease</button>
+                      <button type="button" class="mood-tag" data-mood="Bright" aria-pressed="false">Bright</button>
+                      <button type="button" class="mood-tag" data-mood="Bittersweet" aria-pressed="false">Bittersweet</button>
+                      <button type="button" class="mood-tag" data-mood="Restless" aria-pressed="false">Restless</button>
+                      <button type="button" class="mood-tag" data-mood="Tender" aria-pressed="false">Tender</button>
+                      <button type="button" class="mood-tag" data-mood="Unhurried" aria-pressed="false">Unhurried</button>
+                      <button type="button" class="mood-tag" data-mood="Other" aria-pressed="false">Something else</button>
+                    </div>
+                  </fieldset>
+                </div>
+                <div class="panel-actions">
+                  <span class="step-note">01 <i>/</i> 03</span>
+                  <button id="story-next" class="primary-action" type="button">Choose your frames <span aria-hidden="true">↗</span></button>
+                </div>
+              </div>
+            </section>
+
+            <section id="stage-panel-frames" class="stage-panel" data-panel="frames" aria-labelledby="frames-heading" hidden>
+              <div class="panel-heading">
+                <p class="eyebrow">A PLACE TO LOOK BACK</p>
+                <h2 id="frames-heading">Bring the day<br />into focus.</h2>
+                <p>Choose the photographs that hold the shape of it. They stay on this device.</p>
+              </div>
+              <div class="frames-fields">
+                <label id="photo-dropzone" class="photo-dropzone" for="photo-files" tabindex="0">
+                  <input id="photo-files" class="visually-hidden" type="file" accept="image/*" multiple />
+                  <span class="dropzone-mark" aria-hidden="true"><span></span><span></span></span>
+                  <strong>Drop photographs here</strong>
+                  <span>or choose from your device</span>
+                  <span class="dropzone-format">JPG, PNG, HEIC · choose more than one</span>
+                  <span class="dropzone-browse">Browse photographs</span>
+                </label>
+                <div class="photo-grid-heading">
+                  <span class="field-label">Your frames</span>
+                  <span class="field-hint">Drag to change their order</span>
+                </div>
+                <div id="photo-grid" class="photo-grid" aria-live="polite" aria-label="Selected photographs"></div>
+                <p id="photo-status" class="source-status" role="status" aria-live="polite">No photographs added yet.</p>
+                <div class="panel-actions">
+                  <button id="frames-back" class="secondary-action" type="button"><span aria-hidden="true">←</span> Back to story</button>
+                  <button id="frames-next" class="primary-action" type="button">Add a soundtrack <span aria-hidden="true">↗</span></button>
+                </div>
+              </div>
+            </section>
+
+            <section id="stage-panel-soundtrack" class="stage-panel" data-panel="soundtrack" aria-labelledby="soundtrack-heading" hidden>
+              <div class="panel-heading">
+                <p class="eyebrow">THE SONG THAT WAS THERE</p>
+                <h2 id="soundtrack-heading">Give the memory<br />its own sound.</h2>
+                <p>Choose one song. A local file stays with this browser; a YouTube link opens in its own player.</p>
+              </div>
+              <div class="soundtrack-fields">
+                <div class="source-switch" role="group" aria-label="Choose a soundtrack source">
+                  <button class="source-option is-active" type="button" data-mode="local" aria-pressed="true">A file on this device</button>
+                  <button class="source-option" type="button" data-mode="youtube" aria-pressed="false">A YouTube link</button>
+                </div>
+                <div id="local-panel" class="source-panel" data-panel="local">
+                  <p class="source-description">An MP3 or WAV from your library. It never leaves this browser.</p>
+                  <label class="file-picker" for="audio-file">
+                    <span class="file-picker-icon" aria-hidden="true">+</span>
+                    <span class="file-picker-copy"><strong id="file-name">Choose an audio file</strong><small>MP3 or WAV · stored on this device</small></span>
+                    <span class="file-picker-action">Browse</span>
+                  </label>
+                  <input class="visually-hidden" id="audio-file" type="file" accept=".mp3,.wav,audio/mpeg,audio/wav,audio/wave,audio/x-wav" />
+                  <p id="local-message" class="source-status" aria-live="polite">No track selected yet.</p>
+                  <label class="field-label" for="local-track-title">Track title <span class="optional-note">editable</span></label>
+                  <input id="local-track-title" class="title-input" type="text" maxlength="200" />
+                  <audio id="local-audio-player" class="audio-player" controls preload="metadata" hidden aria-label="Selected local audio"></audio>
+                  <canvas id="audio-visualizer" class="audio-visualizer" aria-hidden="true" hidden></canvas>
+                </div>
+                <div id="youtube-panel" class="source-panel" data-panel="youtube" hidden>
+                  <label class="field-label" for="youtube-url">YouTube link</label>
+                  <input id="youtube-url" type="url" inputmode="url" autocomplete="url" placeholder="https://www.youtube.com/watch?v=…" />
+                  <p class="source-description youtube-help">Watch, Shorts, embed, youtu.be, or YouTube Music links work.</p>
+                  <div id="youtube-status" class="metadata-status" aria-live="polite">Add a link to look up its details.</div>
+                  <div id="youtube-preview" class="youtube-preview" hidden></div>
+                <div class="excerpt-field">
+                  <label class="field-label" for="excerpt-start">Start the song here <span class="optional-note">optional</span></label>
+                  <div class="excerpt-input-wrap">
+                    <input id="excerpt-start" type="text" inputmode="numeric" placeholder="0:00" aria-describedby="excerpt-help" />
+                    <span class="excerpt-unit">min : sec</span>
+                  </div>
+                  <label class="field-label" for="excerpt-duration">Excerpt duration</label>
+                  <div class="excerpt-input-wrap">
+                    <input id="excerpt-duration" type="text" inputmode="numeric" value="0:15" aria-describedby="excerpt-help" />
+                    <span class="excerpt-unit">min : sec</span>
+                  </div>
+                  <p id="excerpt-help" class="field-hint">Set a starting point for the part you want to keep.</p>
+                </div>
+                </div>
+                <p id="form-message" class="form-message" role="status" aria-live="polite"></p>
+                <div class="panel-actions final-actions">
+                  <button id="soundtrack-back" class="secondary-action" type="button"><span aria-hidden="true">←</span> Back to frames</button>
+                  <button id="cancel-create" class="quiet-action" type="button">Leave without saving</button>
+                  <button id="save-button" class="primary-action save-button" type="submit"><span>Save this memory</span><span class="save-arrow" aria-hidden="true">↗</span></button>
+                </div>
+                <p class="privacy-note">Your diary lives in this browser, not on a server.</p>
+              </div>
+            </section>
+          </form>
+        </section>
+      </main>
+
+      <footer class="page-footer">
+        <span>DAYTONE</span>
+        <span>Hold on to what the song held.</span>
+        <span id="footer-year"></span>
+      </footer>
+    </div>
+
+    <dialog id="memory-dialog" class="memory-dialog" aria-labelledby="presentation-title">
+      <div class="presentation-shell">
+        <button id="presentation-close" class="dialog-close" type="button" aria-label="Close memory presentation"><span aria-hidden="true">×</span></button>
+        <div class="presentation-photo-wrap">
+          <img id="presentation-image" class="presentation-image" alt="" />
+          <div id="presentation-empty" class="presentation-empty" hidden>
+            <span class="presentation-empty-kicker">A SOUND MEMORY</span>
+            <strong id="presentation-empty-title"></strong>
+            <span class="presentation-empty-note">Kept in words and music</span>
+          </div>
+          <div id="presentation-indicator" class="presentation-indicator" aria-live="polite"></div>
+          <button id="presentation-prev" class="frame-control frame-prev" type="button" aria-label="Previous frame"><span aria-hidden="true">←</span></button>
+          <button id="presentation-next" class="frame-control frame-next" type="button" aria-label="Next frame"><span aria-hidden="true">→</span></button>
+        </div>
+        <div class="presentation-copy">
+          <p class="eyebrow">A DAY, KEPT IN SOUND</p>
+          <h2 id="presentation-title"></h2>
+          <time id="presentation-date"></time>
+          <p id="presentation-story" class="presentation-story"></p>
+          <div class="presentation-music">
+            <span class="music-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+            <div class="presentation-track-copy">
+              <span class="track-kicker">THE SOUNDTRACK</span>
+              <span id="presentation-track" class="presentation-track"></span>
+            </div>
+            <button id="presentation-play" class="play-control" type="button" aria-label="Play memory soundtrack" aria-pressed="false"><span class="play-glyph" aria-hidden="true"></span></button>
+            <a id="presentation-open-youtube" class="presentation-open-youtube" hidden target="_blank" rel="noopener noreferrer">Open on YouTube</a>
+          </div>
+          <p id="presentation-status" class="presentation-status" role="status" aria-live="polite"></p>
+          <input id="presentation-progress" class="presentation-progress" type="range" min="0" max="100" step="0.01" value="0" aria-label="Soundtrack position" />
+          <div id="presentation-time" class="presentation-time" aria-live="off"></div>
+          <audio id="presentation-audio" preload="metadata"></audio>
+          <div id="presentation-youtube" class="presentation-youtube" hidden></div>
+        </div>
+      </div>
+    </dialog>
+    <dialog id="photo-lightbox" class="photo-lightbox" aria-label="Photograph preview">
+      <button id="photo-lightbox-close" class="dialog-close" type="button" aria-label="Close photograph preview"><span aria-hidden="true">×</span></button>
+      <img id="photo-lightbox-image" alt="" />
+    </dialog>
+  </body>
+</html>
